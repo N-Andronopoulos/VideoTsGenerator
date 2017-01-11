@@ -52,7 +52,7 @@ ${tsPath}`;
  * @param args The ffmpeg arguments.
  */
 const runFFmpeg = (args) => {
-    execSync('ffmpeg', args);
+    execSync('ffmpeg ' + args);
 };
 
 /**
@@ -83,13 +83,13 @@ lineReader.on('line', (line) => {
     savePath = path.join(outputPrefix, line);
     currentDirectory = path.join(outputPrefix, path.dirname(line));
     currentBaseName = path.basename(line);
-    tsFullPath = currentBaseName.replace(path.extname(currentBaseName), '%d.ts');
+    tsFullPath = path.join(outputPrefix, currentBaseName.replace(path.extname(currentBaseName), '.ts'));
 
     if (path.extname(line) === '.mp4') {
         m3u8Path = path.join(currentDirectory, getM3u8Name(currentBaseName));
 
         // Go go power rangers!
-        runFFmpeg(renderFFmpegArgs(currentBaseName, cdnUrlPrefix, m3u8Path, tsFullPath));
+        runFFmpeg(renderFFmpegArgs(line, cdnUrlPrefix, m3u8Path, tsFullPath));
     }
 });
 
