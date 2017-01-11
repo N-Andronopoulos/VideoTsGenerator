@@ -14,6 +14,7 @@ const lineReader = require('readline').createInterface({
 });
 const path = require('path');
 const fs = require('fs');
+const url = require('url');
 const execSync = require('child_process').execSync;
 
 const inputPrefix = process.argv[2];
@@ -41,8 +42,8 @@ const renderFFmpegArgs = (input, url, playlist, tsPath) => {
 -f hls \
 -segment_list_flags hls \
 -hls_base_url ${url} \
--segment_list ${playlist} \
-${tsPath}`;
+-hls_segment_filename ${tsPath} \
+${playlist}`;
 
     console.log(ffmpegArgs);
     return ffmpegArgs;
@@ -73,12 +74,12 @@ const getM3u8Name = (file) => {
 
 if (!fs.existsSync(outputPrefix)) {
     fs.mkdirSync(outputPrefix);
-    process.stdout.write('Path was not found, created.\n');
+    process.stderr.write('Path was not found, created.\n');
 } else {
-    process.stdout.write('Path Exists.\n');
+    process.stderr.write('Path Exists.\n');
 }
 
-let inputFilePath, m3u8Path, tsFullPath;
+let inputFilePath, m3u8Path, tsFullPath, currentOutDir, cdnUrl;
 
 
 lineReader.on('line', (line) => {
@@ -88,15 +89,18 @@ lineReader.on('line', (line) => {
     }
 
     inputFilePath = path.join(inputPrefix, line);
-    m3u8Path = path.join(outputPrefix, path.dirname(line), getM3u8Name(path.basename(line)));
-    tsFullPath = path.join(outputPrefix, path.dirname(line), path.basename(line.replace(path.extname(line), '.ts')));
+    cdnUrl = url.resolve(cdnUrlPrefix, path.dirname(line)) + '/';
+    currentOutDir = path.join(outputPrefix, path.dirname(line));
+    m3u8Path = path.join(currentOutDir, getM3u8Name(path.basename(line)));
+    tsFullPath = path.join(currentOutDir, path.basename(line.replace(path.extname(line), '-%03d.ts')));
 
-    execSync(`mkdir -p ${path.dirname(tsFullPath)}`);
-    //console.log(`Input is ${inputFilePath}\nM3u8 is ${m3u8Path}\nTsPath is ${tsFullPath}`);
+    execSync(`mkdir -p ${currentOutDir}`);
+    process.stderr.write(`Input is ${inputFilePath}\nM3u8 is ${m3u8Path}\nTsPath is ${tsFullPath}\nCDN is ${cdnUrl}\n`);
     // Go go power rangers!
-    runFFmpeg(renderFFmpegArgs(inputFilePath, cdnUrlPrefix, m3u8Path, tsFullPath));
+    runFFmpeg(renderFFmpegArgs(inputFilePath, cdnUrl, m3u8Path, tsFullPath));
 });
 
 lineReader.on('close', () => {
-    process.stderr.write('end\n');
+    process.stderr.write('Finished\n');
 });
+
