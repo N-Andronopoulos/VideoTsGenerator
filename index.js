@@ -101,6 +101,9 @@ let renderTsFiles = () => {
             return;
         }
 
+        // Put it in the Set for future use
+        processedDirs.add(path.dirname(line));
+
         // Oh noes variables
         inputFilePath = path.join(inputPrefix, line);
         cdnUrl = url.resolve(cdnUrlPrefix, path.join(path.dirname(line), 'chunks')) + '/';
@@ -112,11 +115,12 @@ let renderTsFiles = () => {
         execSync(`mkdir -p ${path.join(currentOutDir, 'chunks')}`);
         process.stderr.write(`Input is ${inputFilePath}\nM3u8 is ${m3u8Path}\nTsPath is ${tsFullPath}\nCDN is ${cdnUrl}\n`);
         // Go go power rangers!
-        runFFmpeg(renderFFmpegArgs(inputFilePath, cdnUrl, m3u8Path, tsFullPath));
+        //runFFmpeg(renderFFmpegArgs(inputFilePath, cdnUrl, m3u8Path, tsFullPath));
     });
 
     lineReader.on('close', () => {
         process.stderr.write('Finished\n');
+        console.dir(processedDirs);
     });
 };
 
