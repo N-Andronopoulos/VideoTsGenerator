@@ -83,10 +83,10 @@ lineReader.on('line', (line) => {
     savePath = path.join(outputPrefix, line);
     currentDirectory = path.join(outputPrefix, path.dirname(line));
     currentBaseName = path.basename(line);
-    tsFullPath = path.join(outputPrefix, currentBaseName.replace(path.extname(currentBaseName), '.ts'));
 
     if (path.extname(line) === '.mp4') {
         m3u8Path = path.join(currentDirectory, getM3u8Name(currentBaseName));
+        tsFullPath = path.join(currentDirectory, currentBaseName.replace(path.extname(currentBaseName), '.ts'));
 
         // Go go power rangers!
         runFFmpeg(renderFFmpegArgs(line, cdnUrlPrefix, m3u8Path, tsFullPath));
