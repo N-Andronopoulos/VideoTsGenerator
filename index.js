@@ -1,7 +1,9 @@
 #!/usr/local/bin/node
 
 /**
- * Created by nikolas on 09/01/2017.
+ * Created by Nikola Andronopoulos on 09/01/2017.
+ *
+ * Created for Geotag Aeroview CDN, cause why Akamai?
  */
 
 'use strict';
@@ -9,6 +11,7 @@
 // Fix errors if the script starts from another path
 process.chdir(__dirname);
 
+// Requires and what not
 const lineReader = require('readline').createInterface({
     input: process.stdin
 });
@@ -17,12 +20,13 @@ const fs = require('fs');
 const url = require('url');
 const execSync = require('child_process').execSync;
 
+// Paths and arguments
 const inputPrefix = process.argv[2];
 const outputPrefix = process.argv[3];
 const cdnUrlPrefix = process.argv[4] || 'http://localhost:3000/';
 const m3u8Prefix = 'index', m3u8Postfix = '.m3u8';
+let processedDirs = new Set();
 
-//const ls = spawn('ls', ['-lh', '/usr']);
 
 /**
  * This function renders the arguments for the ffmpeg lib.
@@ -72,35 +76,50 @@ const getM3u8Name = (file) => {
     }
 };
 
-if (!fs.existsSync(outputPrefix)) {
-    fs.mkdirSync(outputPrefix);
-    process.stderr.write('Path was not found, created.\n');
-} else {
-    process.stderr.write('Path Exists.\n');
-}
-
-let inputFilePath, m3u8Path, tsFullPath, currentOutDir, cdnUrl;
-
-
-lineReader.on('line', (line) => {
-    // Quick skip
-    if (path.extname(line) !== '.mp4') {
-        return;
+/**
+ * Sets up the project, eg output directory existence etc...
+ */
+const setup = () => {
+    if (!fs.existsSync(outputPrefix)) {
+        fs.mkdirSync(outputPrefix);
+        process.stderr.write('Path was not found, created.\n');
+    } else {
+        process.stderr.write('Path Exists.\n');
     }
+};
 
-    inputFilePath = path.join(inputPrefix, line);
-    cdnUrl = url.resolve(cdnUrlPrefix, path.join(path.dirname(line), 'chunks')) + '/';
-    currentOutDir = path.join(outputPrefix, path.dirname(line));
-    m3u8Path = path.join(currentOutDir, getM3u8Name(path.basename(line)));
-    tsFullPath = path.join(currentOutDir, 'chunks', path.basename(line.replace(path.extname(line), '-%03d.ts')));
+/**
+ * Main ts & m3u8 generation 'loop'.
+ * Parses input line by line create directories on output and generates TS files with m3u8 playlists.
+ */
+let renderTsFiles = () => {
+    let inputFilePath, m3u8Path, tsFullPath, currentOutDir, cdnUrl;
 
-    execSync(`mkdir -p ${path.join(currentOutDir, 'chunks')}`);
-    process.stderr.write(`Input is ${inputFilePath}\nM3u8 is ${m3u8Path}\nTsPath is ${tsFullPath}\nCDN is ${cdnUrl}\n`);
-    // Go go power rangers!
-    runFFmpeg(renderFFmpegArgs(inputFilePath, cdnUrl, m3u8Path, tsFullPath));
-});
+    lineReader.on('line', (line) => {
+        // Quick skip
+        if (path.extname(line) !== '.mp4') {
+            return;
+        }
 
-lineReader.on('close', () => {
-    process.stderr.write('Finished\n');
-});
+        // Oh noes variables
+        inputFilePath = path.join(inputPrefix, line);
+        cdnUrl = url.resolve(cdnUrlPrefix, path.join(path.dirname(line), 'chunks')) + '/';
+        currentOutDir = path.join(outputPrefix, path.dirname(line));
+        m3u8Path = path.join(currentOutDir, getM3u8Name(path.basename(line)));
+        tsFullPath = path.join(currentOutDir, 'chunks', path.basename(line.replace(path.extname(line), '-%03d.ts')));
 
+        // Create the directories cause ffmpeg doesn't for some reason.
+        execSync(`mkdir -p ${path.join(currentOutDir, 'chunks')}`);
+        process.stderr.write(`Input is ${inputFilePath}\nM3u8 is ${m3u8Path}\nTsPath is ${tsFullPath}\nCDN is ${cdnUrl}\n`);
+        // Go go power rangers!
+        runFFmpeg(renderFFmpegArgs(inputFilePath, cdnUrl, m3u8Path, tsFullPath));
+    });
+
+    lineReader.on('close', () => {
+        process.stderr.write('Finished\n');
+    });
+};
+
+// Go go
+setup();
+renderTsFiles();
