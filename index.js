@@ -91,9 +91,10 @@ lineReader.on('line', (line) => {
     m3u8Path = path.join(outputPrefix, path.dirname(line), getM3u8Name(path.basename(line)));
     tsFullPath = path.join(outputPrefix, path.dirname(line), path.basename(line.replace(path.extname(line), '.ts')));
 
+    execSync(`mkdir -p ${path.dirname(tsFullPath)}`);
     //console.log(`Input is ${inputFilePath}\nM3u8 is ${m3u8Path}\nTsPath is ${tsFullPath}`);
     // Go go power rangers!
-    runFFmpeg(renderFFmpegArgs(line, cdnUrlPrefix, m3u8Path, tsFullPath));
+    runFFmpeg(renderFFmpegArgs(inputFilePath, cdnUrlPrefix, m3u8Path, tsFullPath));
 });
 
 lineReader.on('close', () => {
