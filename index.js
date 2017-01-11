@@ -89,12 +89,12 @@ lineReader.on('line', (line) => {
     }
 
     inputFilePath = path.join(inputPrefix, line);
-    cdnUrl = url.resolve(cdnUrlPrefix, path.dirname(line)) + '/';
+    cdnUrl = url.resolve(cdnUrlPrefix, path.join(path.dirname(line), 'chunks')) + '/';
     currentOutDir = path.join(outputPrefix, path.dirname(line));
     m3u8Path = path.join(currentOutDir, getM3u8Name(path.basename(line)));
-    tsFullPath = path.join(currentOutDir, path.basename(line.replace(path.extname(line), '-%03d.ts')));
+    tsFullPath = path.join(currentOutDir, 'chunks', path.basename(line.replace(path.extname(line), '-%03d.ts')));
 
-    execSync(`mkdir -p ${currentOutDir}`);
+    execSync(`mkdir -p ${path.join(currentOutDir, 'chunks')}`);
     process.stderr.write(`Input is ${inputFilePath}\nM3u8 is ${m3u8Path}\nTsPath is ${tsFullPath}\nCDN is ${cdnUrl}\n`);
     // Go go power rangers!
     runFFmpeg(renderFFmpegArgs(inputFilePath, cdnUrl, m3u8Path, tsFullPath));
