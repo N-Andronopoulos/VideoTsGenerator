@@ -16,8 +16,9 @@ const path = require('path');
 const fs = require('fs');
 const execSync = require('child_process').execSync;
 
-const outputPrefix = process.argv[2];
-const cdnUrlPrefix = process.argv[3] || 'http://localhost:3000/';
+const inputPrefix = process.argv[2];
+const outputPrefix = process.argv[3];
+const cdnUrlPrefix = process.argv[4] || 'http://localhost:3000/';
 const m3u8Prefix = 'index', m3u8Postfix = '.m3u8';
 
 //const ls = spawn('ls', ['-lh', '/usr']);
@@ -77,20 +78,22 @@ if (!fs.existsSync(outputPrefix)) {
     process.stdout.write('Path Exists.\n');
 }
 
-let savePath, currentDirectory, currentBaseName, m3u8Path, tsFullPath;
+let inputFilePath, m3u8Path, tsFullPath;
+
 
 lineReader.on('line', (line) => {
-    savePath = path.join(outputPrefix, line);
-    currentDirectory = path.join(outputPrefix, path.dirname(line));
-    currentBaseName = path.basename(line);
-
-    if (path.extname(line) === '.mp4') {
-        m3u8Path = path.join(currentDirectory, getM3u8Name(currentBaseName));
-        tsFullPath = path.join(currentDirectory, currentBaseName.replace(path.extname(currentBaseName), '.ts'));
-
-        // Go go power rangers!
-        runFFmpeg(renderFFmpegArgs(line, cdnUrlPrefix, m3u8Path, tsFullPath));
+    // Quick skip
+    if (path.extname(line) !== '.mp4') {
+        return;
     }
+
+    inputFilePath = path.join(inputPrefix, line);
+    m3u8Path = path.join(outputPrefix, path.dirname(line), getM3u8Name(path.basename(line)));
+    tsFullPath = path.join(outputPrefix, path.dirname(line), path.basename(line.replace(path.extname(line), '.ts')));
+
+    //console.log(`Input is ${inputFilePath}\nM3u8 is ${m3u8Path}\nTsPath is ${tsFullPath}`);
+    // Go go power rangers!
+    runFFmpeg(renderFFmpegArgs(line, cdnUrlPrefix, m3u8Path, tsFullPath));
 });
 
 lineReader.on('close', () => {
