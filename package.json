@@ -1,4 +1,8 @@
 {
   "name": "Geotag Video TS Generator",
-  "version": "0.0.1"
+  "version": "0.0.1",
+  "dependencies": {
+    "fluent-ffmpeg": "^2.1.0",
+    "m3u": "0.0.2"
+  }
 }

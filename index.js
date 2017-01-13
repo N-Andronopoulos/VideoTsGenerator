@@ -19,13 +19,14 @@ const path = require('path');
 const fs = require('fs');
 const url = require('url');
 const execSync = require('child_process').execSync;
+const masterPlaylistRenderer = require('./lib/masterM3u8Generator');
 
 // Paths and arguments
 const inputPrefix = process.argv[2];
 const outputPrefix = process.argv[3];
 const cdnUrlPrefix = process.argv[4] || 'http://localhost:3000/';
 const m3u8Prefix = 'index', m3u8Postfix = '.m3u8';
-let processedDirs = new Set();
+let processedDirs = [];
 
 
 /**
@@ -45,6 +46,7 @@ const renderFFmpegArgs = (input, url, playlist, tsPath) => {
 -hls_list_size 0 \
 -f hls \
 -segment_list_flags hls \
+-hls_allow_cache 1 \
 -hls_base_url ${url} \
 -hls_segment_filename ${tsPath} \
 ${playlist}`;
@@ -101,9 +103,6 @@ let renderTsFiles = () => {
             return;
         }
 
-        // Put it in the Set for future use
-        processedDirs.add(path.dirname(line));
-
         // Oh noes variables
         inputFilePath = path.join(inputPrefix, line);
         cdnUrl = url.resolve(cdnUrlPrefix, path.join(path.dirname(line), 'chunks')) + '/';
@@ -111,16 +110,26 @@ let renderTsFiles = () => {
         m3u8Path = path.join(currentOutDir, getM3u8Name(path.basename(line)));
         tsFullPath = path.join(currentOutDir, 'chunks', path.basename(line.replace(path.extname(line), '-%03d.ts')));
 
+        // Put it in the Set for future use
+        processedDirs.push({
+            videoFile: inputFilePath,
+            outputPath: currentOutDir,
+            playlistPath: m3u8Path,
+            url: url.resolve(cdnUrlPrefix, path.dirname(line)) + '/'
+        });
+
         // Create the directories cause ffmpeg doesn't for some reason.
         execSync(`mkdir -p ${path.join(currentOutDir, 'chunks')}`);
         process.stderr.write(`Input is ${inputFilePath}\nM3u8 is ${m3u8Path}\nTsPath is ${tsFullPath}\nCDN is ${cdnUrl}\n`);
         // Go go power rangers!
-        //runFFmpeg(renderFFmpegArgs(inputFilePath, cdnUrl, m3u8Path, tsFullPath));
+        runFFmpeg(renderFFmpegArgs(inputFilePath, cdnUrl, m3u8Path, tsFullPath));
     });
 
     lineReader.on('close', () => {
         process.stderr.write('Finished\n');
         console.dir(processedDirs);
+        // Create the master playlist
+        masterPlaylistRenderer.process(processedDirs);
     });
 };
 
