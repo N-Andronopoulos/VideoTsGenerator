@@ -129,7 +129,7 @@ let renderTsFiles = () => {
         process.stderr.write('Finished\n');
         console.dir(processedDirs);
         // Create the master playlist
-        masterPlaylistRenderer.process(processedDirs);
+        masterPlaylistRenderer.generateFiles(processedDirs);
     });
 };
 
