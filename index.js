@@ -38,7 +38,7 @@ const lineReader = require('line-reader');
  * @returns {string} The full arguments.
  */
 const renderFFmpegArgs = (input, url, playlist, tsPath) => {
-    let ffmpegArgs = `-i ${input} \
+    let ffmpegArgs = `-i "${input}" \
 -vcodec copy \
 -acodec copy \
 -vbsf:v h264_mp4toannexb \
@@ -48,9 +48,9 @@ const renderFFmpegArgs = (input, url, playlist, tsPath) => {
 -f hls \
 -segment_list_flags hls \
 -hls_allow_cache 1 \
--hls_base_url ${url} \
--hls_segment_filename ${tsPath} \
-${playlist}`;
+-hls_base_url "${url}" \
+-hls_segment_filename "${tsPath}" \
+"${playlist}"`;
 
     console.log(ffmpegArgs);
     return ffmpegArgs;
